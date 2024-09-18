@@ -15,7 +15,7 @@ def compute_hilbert_phase(data):
     phase_data: 2D numpy array, shape (nodes, time_points), phase of the input data
     """
     analytic_signal = hilbert(data, axis=1)
-    phase_data = np.unwrap(np.angle(analytic_signal), axis=1)
+    phase_data      = np.unwrap(np.angle(analytic_signal), axis=1)
     return phase_data
 
 def compute_phase_differences(phase_data):
@@ -28,7 +28,7 @@ def compute_phase_differences(phase_data):
     Returns:
     phase_diff_matrix: 2D numpy array, shape (nodes*(nodes-1)//2, time_points), pairwise phase differences
     """
-    num_nodes = phase_data.shape[0]
+    num_nodes         = phase_data.shape[0]
     phase_diff_matrix = []
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
@@ -62,34 +62,34 @@ def _compute_dfa_boxcar(data, win_lengths):
     fluctuation: Fluctuation function
     slope: Slopes of the fluctuation function
     """
-    data = np.array(data, copy=True)
+    data    = np.array(data, copy=True)
     win_arr = np.array(win_lengths)
     
-    data -= data.mean(axis=1, keepdims=True)
+    data     -= data.mean(axis=1, keepdims=True)
     data_fft = np.fft.fft(data)
     
     n_chans, n_ts = data.shape
-    is_odd = n_ts % 2 == 1
-    nx = (n_ts + 1) // 2 if is_odd else n_ts // 2 + 1
-    data_power = 2 * np.abs(data_fft[:, 1:nx])**2
+    is_odd        = n_ts % 2 == 1
+    nx            = (n_ts + 1) // 2 if is_odd else n_ts // 2 + 1
+    data_power    = 2 * np.abs(data_fft[:, 1:nx])**2
     
     if not is_odd:
         data_power[:, -1] /= 2
         
-    ff = np.arange(1, nx)
+    ff    = np.arange(1, nx)
     g_sin = np.sin(np.pi * ff / n_ts)
     
     hsin = np.sin(np.pi * np.outer(win_arr, ff) / n_ts)
     hcos = np.cos(np.pi * np.outer(win_arr, ff) / n_ts)
 
     hx = 1 - hsin / np.outer(win_arr, g_sin)
-    h = (hx / (2 * g_sin.reshape(1, -1)))**2
+    h  = (hx / (2 * g_sin.reshape(1, -1)))**2
 
-    f2 = np.inner(data_power, h)
+    f2          = np.inner(data_power, h)
     fluctuation = np.sqrt(f2) / n_ts
     
-    hy = -hx * (hcos * np.pi * ff / n_ts - hsin / win_arr.reshape(-1, 1)) / np.outer(win_arr, g_sin)
-    h3 = hy / (4 * g_sin**2)
+    hy    = -hx * (hcos * np.pi * ff / n_ts - hsin / win_arr.reshape(-1, 1)) / np.outer(win_arr, g_sin)
+    h3    = hy / (4 * g_sin**2)
     slope = np.inner(data_power, h3) / f2 * win_arr
     
     return fluctuation, slope
@@ -109,7 +109,7 @@ def _fit_tukey_regression(x, y, weights):
     """
     X = np.column_stack((np.ones_like(x), x))
     
-    rlm_model = sm.RLM(y, X, M=CustomTukeyNorm(weights=weights, c=4.685))
+    rlm_model   = sm.RLM(y, X, M=CustomTukeyNorm(weights=weights, c=4.685))
     rlm_results = rlm_model.fit()
     
     intercept, slope = rlm_results.params
@@ -169,7 +169,7 @@ def compute_dfa(data, window_lengths, method='boxcar', fitting='Tukey', weightin
             weights = 1 / (n_samples / window_lengths)
         
         dfa_exponents = np.zeros(data.shape[0])
-        residuals = np.zeros(data.shape[0])
+        residuals     = np.zeros(data.shape[0])
         x = np.log2(window_lengths)
         for i in range(data.shape[0]):
             y = np.log2(fluctuation[i])
